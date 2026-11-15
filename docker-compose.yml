@@ -1,0 +1,44 @@
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  usuarios:
+    build: ./servicio-usuarios
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      SERVICIO_TAREAS: http://tareas:5002
+    depends_on:
+      - mongo
+
+  tareas:
+    build: ./servicio-tareas
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      SERVICIO_USUARIOS: http://usuarios:5001
+    depends_on:
+      - mongo
+
+  gateway:
+    build: ./gateway
+    ports:
+      - "5000:5000"
+    environment:
+      SERVICIO_USUARIOS: http://usuarios:5001
+      SERVICIO_TAREAS: http://tareas:5002
+    depends_on:
+      - usuarios
+      - tareas
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - gateway
+
+volumes:
+  mongo_data:
